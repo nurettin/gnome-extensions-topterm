@@ -1,0 +1,16 @@
+[project]
+name = "qterm"
+version = "0.1.0"
+description = "Opinionated dropdown terminal for GNOME Wayland"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+qterm = "qterm.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Runtime deps (libvte, libadwaita, gtk4) come from the system via PyGObject.
+# Run with: python3 -m qterm   (uses system gi)

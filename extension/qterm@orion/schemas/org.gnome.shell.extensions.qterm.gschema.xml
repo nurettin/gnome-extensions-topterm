@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.qterm" path="/org/gnome/shell/extensions/qterm/">
+    <key name="toggle" type="as">
+      <default><![CDATA[['F1']]]></default>
+      <summary>Toggle the qterm dropdown</summary>
+      <description>Keybinding that shows or hides the qterm window.</description>
+    </key>
+  </schema>
+</schemalist>

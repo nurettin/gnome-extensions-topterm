@@ -38,13 +38,7 @@ Middle-click         paste primary selection
 
 ```bash
 git clone https://github.com/nurettin/gnome-extensions-topterm.git
-cd gnome-extensions-topterm
-
-# Python app (provides the `topterm` entry point and the D-Bus service):
-pip install --user .
-
-# GNOME Shell extension (F1 toggle + window placement):
-ln -s "$PWD/extension/topterm@nurett.in" \
+ln -s "$PWD/gnome-extensions-topterm/extension/topterm@nurett.in" \
       ~/.local/share/gnome-shell/extensions/topterm@nurett.in
 glib-compile-schemas \
       ~/.local/share/gnome-shell/extensions/topterm@nurett.in/schemas/
@@ -52,7 +46,9 @@ glib-compile-schemas \
 gnome-extensions enable topterm@nurett.in
 ```
 
-After that, F1 should drop the terminal down. If it doesn't, the extension calls `~/.local/bin/topterm` to spawn the app the first time — make sure that path is on your `PATH` and that `python3 -m topterm` works.
+The Python app is bundled inside the extension directory (`extension/topterm@nurett.in/topterm/`) and is spawned by the JS shim via `python3 -m topterm`. No `pip install` step.
+
+If F1 does nothing, the extension probably failed to spawn Python — check `journalctl --user -b _COMM=gnome-shell | grep topterm` and confirm the native deps below are present.
 
 ## Configure
 
@@ -82,7 +78,12 @@ gsettings set org.gnome.shell.extensions.topterm toggle "['<Super>grave']"
 ## Requirements
 
 - GNOME Shell 50 (Wayland)
-- Python 3.11+, PyGObject, GTK4, libadwaita, VTE 3.91
+- Python 3.11+
+- PyGObject (`python3-gobject` / `python3-gi`)
+- GTK4 + libadwaita
+- VTE 3.91 GIR bindings — Fedora: `vte291-gtk4`, Debian/Ubuntu: `gir1.2-vte-3.91`
+
+On a vanilla GNOME 50 install the GTK4/libadwaita typelibs are typically already pulled in by the desktop itself; VTE 3.91 is the one to double-check.
 
 ## License
 

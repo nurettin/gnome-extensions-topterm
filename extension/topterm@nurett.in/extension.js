@@ -72,19 +72,21 @@ export default class TopTermExtension extends Extension {
     }
 
     _spawnApp() {
-        // Resolves the user-installed entry point from pip/uv install --user.
-        const argv = [GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'topterm'])];
+        // Bundled Python source lives in `<extension-dir>/topterm/`. Running
+        // `python3 -m topterm` with cwd=this.path puts the bundled package on
+        // sys.path[0] without needing PYTHONPATH or a `pip install`.
         try {
             GLib.spawn_async(
+                this.path,
+                ['python3', '-m', 'topterm'],
                 null,
-                argv,
-                null,
-                GLib.SpawnFlags.STDOUT_TO_DEV_NULL
+                GLib.SpawnFlags.SEARCH_PATH
+                    | GLib.SpawnFlags.STDOUT_TO_DEV_NULL
                     | GLib.SpawnFlags.STDERR_TO_DEV_NULL,
                 null
             );
         } catch (e) {
-            logError(e, `topterm: spawn failed (is ${argv[0]} installed?)`);
+            logError(e, 'topterm: failed to spawn `python3 -m topterm` — check native deps (PyGObject, GTK4, libadwaita, VTE 3.91)');
         }
     }
 

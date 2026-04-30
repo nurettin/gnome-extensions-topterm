@@ -1,7 +1,7 @@
 {
     "uuid": "topterm@nurett.in",
-    "name": "TopTerm Dropdown",
-    "description": "F1 dropdown trigger and window placement for the topterm app.",
+    "name": "TopTerm Dropdown Terminal",
+    "description": "F1-toggled dropdown terminal pinned to the top of the primary monitor.",
     "shell-version": ["50"],
     "settings-schema": "org.gnome.shell.extensions.topterm",
     "url": ""

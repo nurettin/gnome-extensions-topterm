@@ -22,7 +22,8 @@ class TopTermApp(Adw.Application):
             application_id=APP_ID,
             flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
         )
-        self.cfg: Config = config.load(config.default_path())
+        cfg_path = config.default_path()
+        self.cfg: Config = config.load(cfg_path)
         self.shell = os.environ.get("SHELL") or "/bin/bash"
         self.css_provider: Gtk.CssProvider | None = None
         self.window: TopTermWindow | None = None
@@ -36,11 +37,16 @@ class TopTermApp(Adw.Application):
 
     def do_activate(self) -> None:
         if self.window is None:
+            show_banner = not self.cfg.banner_shown
             self.window = TopTermWindow(
                 app=self,
                 shell=self.shell,
                 cwd=str(Path.home()),
+                first_run=show_banner,
             )
+            if show_banner:
+                self.cfg.banner_shown = True
+                self.save_config()
         self.window.present()
 
     def bg_rgba(self) -> Gdk.RGBA:

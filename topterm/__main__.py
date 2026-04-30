@@ -1,10 +1,10 @@
 import sys
 
-from qterm.app import QTermApp
+from topterm.app import TopTermApp
 
 
 def main() -> int:
-    return QTermApp().run(sys.argv)
+    return TopTermApp().run(sys.argv)
 
 
 if __name__ == "__main__":

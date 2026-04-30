@@ -6,11 +6,11 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const APP_ID = 'com.orion.qterm';
-const APP_OBJECT_PATH = '/com/orion/qterm';
+const APP_ID = 'in.nurett.topterm';
+const APP_OBJECT_PATH = '/in/nurett/topterm';
 const TOGGLE_KEY = 'toggle';
 
-export default class QTermExtension extends Extension {
+export default class TopTermExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
 
@@ -73,7 +73,7 @@ export default class QTermExtension extends Extension {
 
     _spawnApp() {
         // Resolves the user-installed entry point from pip/uv install --user.
-        const argv = [GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'qterm'])];
+        const argv = [GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'topterm'])];
         try {
             GLib.spawn_async(
                 null,
@@ -84,7 +84,7 @@ export default class QTermExtension extends Extension {
                 null
             );
         } catch (e) {
-            logError(e, `qterm: spawn failed (is ${argv[0]} installed?)`);
+            logError(e, `topterm: spawn failed (is ${argv[0]} installed?)`);
         }
     }
 
@@ -135,7 +135,7 @@ export default class QTermExtension extends Extension {
 
     _readCoverage() {
         const path = GLib.build_filenamev([
-            GLib.get_user_config_dir(), 'qterm', 'config.ini'
+            GLib.get_user_config_dir(), 'topterm', 'config.ini'
         ]);
         const [ok, contents] = GLib.file_get_contents(path);
         if (!ok) return 50;

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.topterm" path="/org/gnome/shell/extensions/topterm/">
+    <key name="toggle" type="as">
+      <default><![CDATA[['F1']]]></default>
+      <summary>Toggle the topterm dropdown</summary>
+      <description>Keybinding that shows or hides the topterm window.</description>
+    </key>
+  </schema>
+</schemalist>

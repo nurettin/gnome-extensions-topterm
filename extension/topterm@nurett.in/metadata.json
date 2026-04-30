@@ -1,0 +1,8 @@
+{
+    "uuid": "topterm@nurett.in",
+    "name": "TopTerm Dropdown",
+    "description": "F1 dropdown trigger and window placement for the topterm app.",
+    "shell-version": ["50"],
+    "settings-schema": "org.gnome.shell.extensions.topterm",
+    "url": ""
+}

@@ -2,4 +2,4 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
-extension/qterm@orion/schemas/gschemas.compiled
+**/schemas/gschemas.compiled

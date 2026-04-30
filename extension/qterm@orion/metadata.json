@@ -1,8 +1,0 @@
-{
-    "uuid": "qterm@orion",
-    "name": "QTerm Dropdown",
-    "description": "F1 dropdown trigger and window placement for the qterm app.",
-    "shell-version": ["50"],
-    "settings-schema": "org.gnome.shell.extensions.qterm",
-    "url": ""
-}

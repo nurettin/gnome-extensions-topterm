@@ -42,7 +42,7 @@ _DEFAULTS_SHORTCUTS = {
 
 
 def default_path() -> Path:
-    return Path.home() / ".config" / "qterm" / "config.ini"
+    return Path.home() / ".config" / "topterm" / "config.ini"
 
 
 def load(path: Path) -> Config:

@@ -7,8 +7,8 @@ gi.require_version("Gdk", "4.0")
 
 from gi.repository import Adw, Gdk, Gio, Gtk
 
-from qterm.config import Shortcuts
-from qterm.tab import TerminalTab
+from topterm.config import Shortcuts
+from topterm.tab import TerminalTab
 
 COVERAGE_STEP = 5
 COVERAGE_MIN = 10
@@ -25,13 +25,13 @@ ADJUST_BINDINGS: tuple[tuple[str, str], ...] = (
 )
 
 
-class QTermWindow(Adw.ApplicationWindow):
+class TopTermWindow(Adw.ApplicationWindow):
     def __init__(self, app, shell: str, cwd: str) -> None:
         super().__init__(application=app)
         self.app = app
         self.shell = shell
         self.cwd = cwd
-        self.set_title("qterm")
+        self.set_title("topterm")
         self.set_default_size(1200, 400)
 
         self.tab_view = Adw.TabView()

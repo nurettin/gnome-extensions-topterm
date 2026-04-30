@@ -9,14 +9,14 @@ gi.require_version("Gdk", "4.0")
 
 from gi.repository import Adw, Gdk, Gio, Gtk
 
-from qterm import config
-from qterm.config import Config
-from qterm.window import QTermWindow
+from topterm import config
+from topterm.config import Config
+from topterm.window import TopTermWindow
 
-APP_ID = "com.orion.qterm"
+APP_ID = "in.nurett.topterm"
 
 
-class QTermApp(Adw.Application):
+class TopTermApp(Adw.Application):
     def __init__(self) -> None:
         super().__init__(
             application_id=APP_ID,
@@ -25,7 +25,7 @@ class QTermApp(Adw.Application):
         self.cfg: Config = config.load(config.default_path())
         self.shell = os.environ.get("SHELL") or "/bin/bash"
         self.css_provider: Gtk.CssProvider | None = None
-        self.window: QTermWindow | None = None
+        self.window: TopTermWindow | None = None
 
     def do_startup(self) -> None:
         Adw.Application.do_startup(self)
@@ -36,7 +36,7 @@ class QTermApp(Adw.Application):
 
     def do_activate(self) -> None:
         if self.window is None:
-            self.window = QTermWindow(
+            self.window = TopTermWindow(
                 app=self,
                 shell=self.shell,
                 cwd=str(Path.home()),

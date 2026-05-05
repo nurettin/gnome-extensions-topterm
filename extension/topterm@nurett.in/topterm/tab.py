@@ -11,6 +11,12 @@ ZOOM_STEP = 1.1
 ZOOM_MIN = 0.5
 ZOOM_MAX = 4.0
 
+# PCRE2 flags for vte_regex_new_for_search; matching what gnome-terminal /
+# Ptyxis pass so multi-line scrollback content is searchable case-insensitively.
+PCRE2_CASELESS = 0x00000008
+PCRE2_MULTILINE = 0x00000400
+SEARCH_FLAGS = PCRE2_CASELESS | PCRE2_MULTILINE
+
 
 class TerminalTab(Gtk.Box):
     def __init__(
@@ -18,20 +24,42 @@ class TerminalTab(Gtk.Box):
         shell: str,
         cwd: str,
         bg_rgba: Gdk.RGBA,
+        fg_rgba: Gdk.RGBA,
+        palette: list[Gdk.RGBA],
         font: str,
         zoom: float,
         on_zoom_change: Callable[[float], None],
+        on_exit: Callable[["TerminalTab"], None],
         banner: str | None = None,
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.on_zoom_change = on_zoom_change
+        self.on_exit = on_exit
         self.terminal = Vte.Terminal()
         self.terminal.set_hexpand(True)
         self.terminal.set_vexpand(True)
         self.terminal.set_scrollback_lines(10000)
         self.terminal.set_mouse_autohide(True)
-        self.set_appearance(bg_rgba=bg_rgba, font=font)
+        self.set_appearance(
+            bg_rgba=bg_rgba, fg_rgba=fg_rgba, palette=palette, font=font
+        )
         self.terminal.set_font_scale(zoom)
+
+        self.search_entry = Gtk.SearchEntry(hexpand=True)
+        self.search_entry.connect("search-changed", self._on_search_changed)
+        self.search_entry.connect("next-match", lambda *_: self.terminal.search_find_next())
+        self.search_entry.connect("previous-match", lambda *_: self.terminal.search_find_previous())
+        self.search_entry.connect("activate", lambda *_: self.terminal.search_find_previous())
+        self.search_entry.connect("stop-search", lambda *_: self.stop_search())
+
+        self.search_bar = Gtk.SearchBar()
+        self.search_bar.set_show_close_button(True)
+        self.search_bar.set_child(self.search_entry)
+        self.search_bar.connect_entry(self.search_entry)
+        self.search_bar.connect("notify::search-mode-enabled", self._on_search_mode_changed)
+        self.terminal.search_set_wrap_around(True)
+
+        self.append(self.search_bar)
         self.append(self.terminal)
 
         scroll = Gtk.EventControllerScroll.new(
@@ -44,6 +72,8 @@ class TerminalTab(Gtk.Box):
         middle_click.set_button(Gdk.BUTTON_MIDDLE)
         middle_click.connect("pressed", self._on_middle_click)
         self.terminal.add_controller(middle_click)
+
+        self.terminal.connect("child-exited", lambda *_: self.on_exit(self))
 
         self.terminal.spawn_async(
             Vte.PtyFlags.DEFAULT,
@@ -62,8 +92,14 @@ class TerminalTab(Gtk.Box):
         if banner is not None:
             self.terminal.feed(banner.encode("utf-8"))
 
-    def set_appearance(self, bg_rgba: Gdk.RGBA, font: str) -> None:
-        self.terminal.set_color_background(bg_rgba)
+    def set_appearance(
+        self,
+        bg_rgba: Gdk.RGBA,
+        fg_rgba: Gdk.RGBA,
+        palette: list[Gdk.RGBA],
+        font: str,
+    ) -> None:
+        self.terminal.set_colors(fg_rgba, bg_rgba, palette)
         self.terminal.set_font(Pango.FontDescription.from_string(font))
 
     def set_zoom(self, zoom: float) -> None:
@@ -84,3 +120,34 @@ class TerminalTab(Gtk.Box):
         zoom = zoom / ZOOM_STEP if dy > 0 else zoom * ZOOM_STEP
         self.on_zoom_change(max(ZOOM_MIN, min(ZOOM_MAX, zoom)))
         return True
+
+    def start_search(self) -> None:
+        self.search_bar.set_search_mode(True)
+        self.search_entry.grab_focus()
+
+    def stop_search(self) -> None:
+        self.search_bar.set_search_mode(False)
+
+    def _on_search_mode_changed(self, *_: object) -> None:
+        if self.search_bar.get_search_mode():
+            return
+        # Closing path (Esc, close button, or programmatic): wipe highlights
+        # and selection, hand focus back so typing goes to the shell again.
+        self.terminal.search_set_regex(None, 0)
+        self.terminal.unselect_all()
+        self.terminal.grab_focus()
+
+    def _on_search_changed(self, entry: Gtk.SearchEntry) -> None:
+        text = entry.get_text()
+        if not text:
+            self.terminal.search_set_regex(None, 0)
+            return
+        pattern = GLib.Regex.escape_string(text, -1)
+        try:
+            regex = Vte.Regex.new_for_search(pattern, -1, SEARCH_FLAGS)
+        except GLib.Error:
+            return
+        self.terminal.search_set_regex(regex, 0)
+        # Search backwards first so the most recent match (likely on-screen)
+        # gets highlighted instead of jumping to the oldest scrollback hit.
+        self.terminal.search_find_previous()

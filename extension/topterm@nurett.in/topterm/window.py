@@ -40,6 +40,7 @@ WELCOME_BANNER = (
     "#   F1                   toggle (gsettings org.gnome.shell.extensions.topterm toggle)\r\n"
     "#   Ctrl+T / Ctrl+W      new / close tab\r\n"
     "#   F2                   rename current tab\r\n"
+    "#   Ctrl+F               find in scrollback (Esc to close)\r\n"
     "#   Alt+1..9, Alt+0      jump to tab 1..9, 10\r\n"
     "#   Ctrl+Shift+Up/Down   shorter / taller (5%)\r\n"
     "#   Ctrl+Shift+T / O     more transparent / more opaque (5%)\r\n"
@@ -85,6 +86,7 @@ class TopTermWindow(Adw.ApplicationWindow):
             "new-tab": lambda *_: self.add_tab(),
             "close-tab": lambda *_: self._close_current_tab(),
             "rename-tab": lambda *_: self.rename_current_tab(),
+            "find": lambda *_: self._start_search_in_current_tab(),
             "taller": lambda *_: self._adjust_coverage(+COVERAGE_STEP),
             "shorter": lambda *_: self._adjust_coverage(-COVERAGE_STEP),
             "more-transparent": lambda *_: self._adjust_transparency(+TRANSPARENCY_STEP),
@@ -108,15 +110,23 @@ class TopTermWindow(Adw.ApplicationWindow):
             shell=self.shell,
             cwd=self.cwd,
             bg_rgba=self.app.bg_rgba(),
-            font=self.app.cfg.font,
+            fg_rgba=self.app.fg_rgba(),
+            palette=self.app.palette_rgba(),
+            font=self.app.effective_font(),
             zoom=self.app.cfg.zoom,
             on_zoom_change=self._on_zoom_change,
+            on_exit=self._on_tab_exit,
             banner=banner,
         )
         page = self.tab_view.append(tab)
         page.set_title(f"Terminal {self.tab_view.get_n_pages()}")
         self.tab_view.set_selected_page(page)
         return page
+
+    def _on_tab_exit(self, tab: TerminalTab) -> None:
+        page = self.tab_view.get_page(tab)
+        if page is not None:
+            self.tab_view.close_page(page)
 
     def rename_current_tab(self) -> None:
         page = self.tab_view.get_selected_page()
@@ -140,13 +150,21 @@ class TopTermWindow(Adw.ApplicationWindow):
 
     # ---- live re-apply ----------------------------------------------------
 
-    def apply_appearance(self, bg_rgba: Gdk.RGBA, font: str) -> None:
+    def apply_appearance(
+        self,
+        bg_rgba: Gdk.RGBA,
+        fg_rgba: Gdk.RGBA,
+        palette: list[Gdk.RGBA],
+        font: str,
+    ) -> None:
         n = self.tab_view.get_n_pages()
         for i in range(n):
             page = self.tab_view.get_nth_page(i)
             tab = page.get_child()
             if isinstance(tab, TerminalTab):
-                tab.set_appearance(bg_rgba=bg_rgba, font=font)
+                tab.set_appearance(
+                    bg_rgba=bg_rgba, fg_rgba=fg_rgba, palette=palette, font=font
+                )
 
     def apply_zoom(self, zoom: float) -> None:
         n = self.tab_view.get_n_pages()
@@ -173,6 +191,7 @@ class TopTermWindow(Adw.ApplicationWindow):
             (shortcuts.new_tab, "win.new-tab"),
             (shortcuts.close_tab, "win.close-tab"),
             (shortcuts.rename_tab, "win.rename-tab"),
+            (shortcuts.find, "win.find"),
             *ADJUST_BINDINGS,
             *TAB_SELECT_BINDINGS,
         )
@@ -221,6 +240,14 @@ class TopTermWindow(Adw.ApplicationWindow):
         page = self.tab_view.get_selected_page()
         if page is not None:
             self.tab_view.close_page(page)
+
+    def _start_search_in_current_tab(self) -> None:
+        page = self.tab_view.get_selected_page()
+        if page is None:
+            return
+        tab = page.get_child()
+        if isinstance(tab, TerminalTab):
+            tab.start_search()
 
     def _select_tab(self, idx: int) -> None:
         if 0 <= idx < self.tab_view.get_n_pages():

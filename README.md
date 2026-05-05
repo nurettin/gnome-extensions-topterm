@@ -27,6 +27,7 @@ If that is a problem for you, fork it.
 F1                   toggle dropdown (rebindable: gsettings set org.gnome.shell.extensions.topterm toggle "['F1']")
 Ctrl+T / Ctrl+W      new / close tab
 F2                   rename current tab
+Ctrl+F               find in scrollback (Esc to close)
 Alt+1..9, Alt+0      jump to tab 1..9, 10
 Ctrl+Shift+Up/Down   taller / shorter (5%)
 Ctrl+Shift+T / O     more transparent / more opaque (5%)
@@ -57,7 +58,8 @@ UI/shortcut state lives in `~/.config/topterm/config.ini` and is written automat
 ```ini
 [ui]
 coverage = 50          # height as % of monitor (1..100)
-background = #1e1e1e
+follow_theme = true    # match GNOME light/dark; ignores `background` when true
+background = #1e1e1e   # used only when follow_theme = false
 transparency = 0       # 0..100 (% transparent; 0 = opaque)
 font = Monospace 12
 zoom = 1.0             # vte font scale (0.5..4.0)
@@ -67,6 +69,7 @@ banner_shown = false   # welcome banner shown once, then flipped to true
 new_tab = <Primary>t
 close_tab = <Primary>w
 rename_tab = F2
+find = <Primary>f
 ```
 
 The F1 toggle accel is a GNOME Shell extension setting (not in `config.ini`):

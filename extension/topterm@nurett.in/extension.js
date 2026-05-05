@@ -9,6 +9,8 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 const APP_ID = 'in.nurett.topterm';
 const APP_OBJECT_PATH = '/in/nurett/topterm';
 const TOGGLE_KEY = 'toggle';
+const SPAWN_GRACE_SECONDS = 5;
+const DEPS_HINT = 'Install python3, PyGObject, GTK4, libadwaita, and VTE 3.91.';
 
 export default class TopTermExtension extends Extension {
     enable() {
@@ -32,6 +34,10 @@ export default class TopTermExtension extends Extension {
     }
 
     disable() {
+        if (this._depsCheckId) {
+            GLib.source_remove(this._depsCheckId);
+            this._depsCheckId = null;
+        }
         if (this._toggleChangedId) {
             this._settings.disconnect(this._toggleChangedId);
             this._toggleChangedId = null;
@@ -85,9 +91,43 @@ export default class TopTermExtension extends Extension {
                     | GLib.SpawnFlags.STDERR_TO_DEV_NULL,
                 null
             );
+            this._scheduleDepsCheck();
         } catch (e) {
-            logError(e, 'topterm: failed to spawn `python3 -m topterm` — check native deps (PyGObject, GTK4, libadwaita, VTE 3.91)');
+            Main.notifyError('TopTerm', `python3 not found. ${DEPS_HINT}`);
+            logError(e, 'topterm: failed to spawn `python3 -m topterm`');
         }
+    }
+
+    _scheduleDepsCheck() {
+        // spawn_async only fails synchronously when python3 is absent. If
+        // python3 launches but the import of Vte/Adw/Gtk fails, stderr is
+        // discarded and the app silently dies without claiming the bus name.
+        // Catch that case by polling NameHasOwner after a grace period.
+        if (this._depsCheckId)
+            GLib.source_remove(this._depsCheckId);
+        this._depsCheckId = GLib.timeout_add_seconds(
+            GLib.PRIORITY_DEFAULT,
+            SPAWN_GRACE_SECONDS,
+            () => {
+                this._depsCheckId = null;
+                Gio.DBus.session.call(
+                    'org.freedesktop.DBus',
+                    '/org/freedesktop/DBus',
+                    'org.freedesktop.DBus',
+                    'NameHasOwner',
+                    new GLib.Variant('(s)', [APP_ID]),
+                    null, Gio.DBusCallFlags.NONE, -1, null,
+                    (conn, res) => {
+                        try {
+                            const [hasOwner] = conn.call_finish(res).deepUnpack();
+                            if (!hasOwner)
+                                Main.notifyError('TopTerm', `Failed to start. ${DEPS_HINT}`);
+                        } catch (_e) {}
+                    }
+                );
+                return GLib.SOURCE_REMOVE;
+            }
+        );
     }
 
     _onWindowCreated(win) {

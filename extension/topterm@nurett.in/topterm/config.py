@@ -16,13 +16,15 @@ class Shortcuts:
     new_tab: str
     close_tab: str
     rename_tab: str
+    find: str
 
 
 @dataclass
 class Config:
     path: Path
     coverage: int  # height % of monitor (1..100)
-    background: str  # CSS color string, e.g. "#1e1e1e"
+    follow_theme: bool  # match GNOME light/dark theme; ignores `background` when true
+    background: str  # CSS color string, e.g. "#1e1e1e" (used when follow_theme=false)
     transparency: int  # 0..100 (% transparent; 0 = opaque)
     font: str  # Pango font description, e.g. "Monospace 11"
     zoom: float  # vte font scale (0.5..4.0); 1.0 = no zoom
@@ -32,6 +34,7 @@ class Config:
 
 _DEFAULTS_UI = {
     "coverage": "50",
+    "follow_theme": "true",
     "background": "#1e1e1e",
     "transparency": "0",
     "font": "Monospace 12",
@@ -42,6 +45,7 @@ _DEFAULTS_SHORTCUTS = {
     "new_tab": "<Primary>t",
     "close_tab": "<Primary>w",
     "rename_tab": "F2",
+    "find": "<Primary>f",
 }
 
 
@@ -59,6 +63,9 @@ def load(path: Path) -> Config:
 
     coverage = _parse_int_in_range(
         "coverage", ui.get("coverage", _DEFAULTS_UI["coverage"]), 1, 100
+    )
+    follow_theme = _parse_bool(
+        "follow_theme", ui.get("follow_theme", _DEFAULTS_UI["follow_theme"])
     )
     background = ui.get("background", _DEFAULTS_UI["background"])
     _validate_color(background)
@@ -84,11 +91,15 @@ def load(path: Path) -> Config:
         rename_tab=_validate_accel(
             "rename_tab", sc.get("rename_tab", _DEFAULTS_SHORTCUTS["rename_tab"])
         ),
+        find=_validate_accel(
+            "find", sc.get("find", _DEFAULTS_SHORTCUTS["find"])
+        ),
     )
 
     cfg = Config(
         path=path,
         coverage=coverage,
+        follow_theme=follow_theme,
         background=background,
         transparency=transparency,
         font=font,
@@ -107,6 +118,7 @@ def save(cfg: Config) -> None:
     parser = configparser.ConfigParser()
     parser["ui"] = {
         "coverage": str(cfg.coverage),
+        "follow_theme": "true" if cfg.follow_theme else "false",
         "background": cfg.background,
         "transparency": str(cfg.transparency),
         "font": cfg.font,
@@ -117,6 +129,7 @@ def save(cfg: Config) -> None:
         "new_tab": cfg.shortcuts.new_tab,
         "close_tab": cfg.shortcuts.close_tab,
         "rename_tab": cfg.shortcuts.rename_tab,
+        "find": cfg.shortcuts.find,
     }
     cfg.path.parent.mkdir(parents=True, exist_ok=True)
     with cfg.path.open("w") as f:

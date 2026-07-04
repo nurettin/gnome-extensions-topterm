@@ -5,7 +5,7 @@ gi.require_version("Adw", "1")
 gi.require_version("Vte", "3.91")
 gi.require_version("Gdk", "4.0")
 
-from gi.repository import Adw, Gdk, Gio, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from topterm.config import Shortcuts
 from topterm.tab import TerminalTab, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP
@@ -148,6 +148,14 @@ class TopTermWindow(Adw.ApplicationWindow):
 
         dialog.connect("response", on_response)
         dialog.present(self)
+        # Adw.AlertDialog defaults focus to the action buttons, so the entry
+        # only takes typing after a click. Defer the grab so the dialog has
+        # been mapped, and select-all lets the user type to replace.
+        def _focus_entry() -> bool:
+            entry.grab_focus()
+            entry.select_region(0, -1)
+            return False
+        GLib.idle_add(_focus_entry)
 
     # ---- live re-apply ----------------------------------------------------
 

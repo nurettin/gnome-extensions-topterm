@@ -46,6 +46,7 @@ WELCOME_BANNER = (
     "#   Ctrl+Shift+T / O     more transparent / more opaque (5%)\r\n"
     "#   Ctrl++ / Ctrl+-      zoom in / out  (also Ctrl+Scroll)\r\n"
     "#   Middle-click         paste primary selection\r\n"
+    "#   Ctrl+Click           open URL under pointer\r\n"
     "#\r\n"
     "# Config: ~/.config/topterm/config.ini\r\n"
     "#\r\n"

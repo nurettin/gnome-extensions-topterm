@@ -5,7 +5,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Vte", "3.91")
 
-from gi.repository import Gdk, GLib, Gtk, Pango, Vte
+from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
 ZOOM_STEP = 1.1
 ZOOM_MIN = 0.5
@@ -16,6 +16,11 @@ ZOOM_MAX = 4.0
 PCRE2_CASELESS = 0x00000008
 PCRE2_MULTILINE = 0x00000400
 SEARCH_FLAGS = PCRE2_CASELESS | PCRE2_MULTILINE
+
+URL_REGEX = (
+    r"(?:https?|ftp|file)://"
+    r"[^\s<>\"'`{}|\\^\[\]]+"
+)
 
 
 class TerminalTab(Gtk.Box):
@@ -40,6 +45,8 @@ class TerminalTab(Gtk.Box):
         self.terminal.set_vexpand(True)
         self.terminal.set_scrollback_lines(10000)
         self.terminal.set_mouse_autohide(True)
+        self.terminal.set_allow_hyperlink(True)
+        self._add_url_matcher()
         self.set_appearance(
             bg_rgba=bg_rgba, fg_rgba=fg_rgba, palette=palette, font=font
         )
@@ -72,6 +79,16 @@ class TerminalTab(Gtk.Box):
         middle_click.set_button(Gdk.BUTTON_MIDDLE)
         middle_click.connect("pressed", self._on_middle_click)
         self.terminal.add_controller(middle_click)
+
+        # CAPTURE phase so a Ctrl+click on a URL is intercepted before VTE
+        # starts a selection drag; the handler claims the gesture only when
+        # a URL is actually under the pointer, otherwise the click falls
+        # through to VTE's normal selection handling.
+        link_click = Gtk.GestureClick.new()
+        link_click.set_button(Gdk.BUTTON_PRIMARY)
+        link_click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        link_click.connect("pressed", self._on_link_click)
+        self.terminal.add_controller(link_click)
 
         self.terminal.connect("child-exited", lambda *_: self.on_exit(self))
 
@@ -109,6 +126,33 @@ class TerminalTab(Gtk.Box):
         self, gesture: Gtk.GestureClick, n_press: int, x: float, y: float
     ) -> None:
         self.terminal.paste_primary()
+
+    def _add_url_matcher(self) -> None:
+        try:
+            regex = Vte.Regex.new_for_match(URL_REGEX, -1, SEARCH_FLAGS)
+        except GLib.Error:
+            return
+        tag = self.terminal.match_add_regex(regex, 0)
+        self.terminal.match_set_cursor_name(tag, "pointer")
+
+    def _on_link_click(
+        self, gesture: Gtk.GestureClick, n_press: int, x: float, y: float
+    ) -> None:
+        event = gesture.get_current_event()
+        if event is None:
+            return
+        if not (event.get_modifier_state() & Gdk.ModifierType.CONTROL_MASK):
+            return
+        # OSC 8 hyperlinks first; they carry an explicit URI even when the
+        # visible text doesn't look like a URL.
+        uri = self.terminal.check_hyperlink_at(x, y)
+        if uri is None:
+            match, _tag = self.terminal.check_match_at(x, y)
+            uri = match
+        if uri is None:
+            return
+        Gio.AppInfo.launch_default_for_uri(uri, None)
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
 
     def _on_scroll(self, controller: Gtk.EventControllerScroll, dx: float, dy: float) -> bool:
         event = controller.get_current_event()

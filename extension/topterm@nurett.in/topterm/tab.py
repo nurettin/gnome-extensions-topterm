@@ -78,11 +78,6 @@ class TerminalTab(Gtk.Box):
         scroll.connect("scroll", self._on_scroll)
         self.terminal.add_controller(scroll)
 
-        middle_click = Gtk.GestureClick.new()
-        middle_click.set_button(Gdk.BUTTON_MIDDLE)
-        middle_click.connect("pressed", self._on_middle_click)
-        self.terminal.add_controller(middle_click)
-
         # CAPTURE phase so a Ctrl+click on a URL is intercepted before VTE
         # starts a selection drag; the handler claims the gesture only when
         # a URL is actually under the pointer, otherwise the click falls
@@ -124,11 +119,6 @@ class TerminalTab(Gtk.Box):
 
     def set_zoom(self, zoom: float) -> None:
         self.terminal.set_font_scale(zoom)
-
-    def _on_middle_click(
-        self, gesture: Gtk.GestureClick, n_press: int, x: float, y: float
-    ) -> None:
-        self.terminal.paste_primary()
 
     def _add_url_matcher(self) -> None:
         try:

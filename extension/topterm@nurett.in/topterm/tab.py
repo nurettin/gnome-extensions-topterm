@@ -45,6 +45,9 @@ class TerminalTab(Gtk.Box):
         self.terminal.set_vexpand(True)
         self.terminal.set_scrollback_lines(10000)
         self.terminal.set_mouse_autohide(True)
+        # Default is False; without it a paste while scrolled up in the
+        # scrollback lands out of view at the bottom.
+        self.terminal.set_scroll_on_insert(True)
         self.terminal.set_allow_hyperlink(True)
         self._add_url_matcher()
         self.set_appearance(

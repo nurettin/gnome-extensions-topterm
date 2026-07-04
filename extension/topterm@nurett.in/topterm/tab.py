@@ -7,6 +7,8 @@ gi.require_version("Vte", "3.91")
 
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
+from topterm.image import render_texture
+
 ZOOM_STEP = 1.1
 ZOOM_MIN = 0.5
 ZOOM_MAX = 4.0
@@ -114,11 +116,39 @@ class TerminalTab(Gtk.Box):
         palette: list[Gdk.RGBA],
         font: str,
     ) -> None:
+        self.bg_rgba = bg_rgba
         self.terminal.set_colors(fg_rgba, bg_rgba, palette)
         self.terminal.set_font(Pango.FontDescription.from_string(font))
 
     def set_zoom(self, zoom: float) -> None:
         self.terminal.set_font_scale(zoom)
+
+    def paste(self) -> None:
+        clipboard = self.terminal.get_clipboard()
+        mimes = clipboard.get_formats().get_mime_types() or ()
+        has_text = any(
+            m.startswith("text/plain") or m in ("UTF8_STRING", "STRING", "TEXT")
+            for m in mimes
+        )
+        has_image = any(m.startswith("image/") for m in mimes)
+        if has_image and not has_text:
+            clipboard.read_texture_async(None, self._on_paste_texture)
+        else:
+            self.terminal.paste_clipboard()
+
+    def _on_paste_texture(
+        self, clipboard: Gdk.Clipboard, result: Gio.AsyncResult
+    ) -> None:
+        texture = clipboard.read_texture_finish(result)
+        data = render_texture(
+            texture=texture,
+            cols=self.terminal.get_column_count(),
+            rows=self.terminal.get_row_count(),
+            char_width=self.terminal.get_char_width(),
+            char_height=self.terminal.get_char_height(),
+            bg_rgba=self.bg_rgba,
+        )
+        self.terminal.feed(b"\r\n" + data)
 
     def _add_url_matcher(self) -> None:
         try:

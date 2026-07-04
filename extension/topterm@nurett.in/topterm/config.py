@@ -17,6 +17,7 @@ class Shortcuts:
     close_tab: str
     rename_tab: str
     find: str
+    paste: str
 
 
 @dataclass
@@ -46,6 +47,7 @@ _DEFAULTS_SHORTCUTS = {
     "close_tab": "<Primary>w",
     "rename_tab": "F2",
     "find": "<Primary>f",
+    "paste": "<Primary><Shift>v",
 }
 
 
@@ -94,6 +96,9 @@ def load(path: Path) -> Config:
         find=_validate_accel(
             "find", sc.get("find", _DEFAULTS_SHORTCUTS["find"])
         ),
+        paste=_validate_accel(
+            "paste", sc.get("paste", _DEFAULTS_SHORTCUTS["paste"])
+        ),
     )
 
     cfg = Config(
@@ -130,6 +135,7 @@ def save(cfg: Config) -> None:
         "close_tab": cfg.shortcuts.close_tab,
         "rename_tab": cfg.shortcuts.rename_tab,
         "find": cfg.shortcuts.find,
+        "paste": cfg.shortcuts.paste,
     }
     cfg.path.parent.mkdir(parents=True, exist_ok=True)
     with cfg.path.open("w") as f:

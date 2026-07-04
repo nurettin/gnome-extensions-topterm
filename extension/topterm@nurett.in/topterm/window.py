@@ -46,6 +46,7 @@ WELCOME_BANNER = (
     "#   Ctrl+Shift+T / O     more transparent / more opaque (5%)\r\n"
     "#   Ctrl++ / Ctrl+-      zoom in / out  (also Ctrl+Scroll)\r\n"
     "#   Middle-click         paste primary selection\r\n"
+    "#   Ctrl+Shift+V         paste (images shown as blocks)\r\n"
     "#   Ctrl+Click           open URL under pointer\r\n"
     "#\r\n"
     "# Config: ~/.config/topterm/config.ini\r\n"
@@ -88,6 +89,7 @@ class TopTermWindow(Adw.ApplicationWindow):
             "close-tab": lambda *_: self._close_current_tab(),
             "rename-tab": lambda *_: self.rename_current_tab(),
             "find": lambda *_: self._start_search_in_current_tab(),
+            "paste": lambda *_: self._paste_in_current_tab(),
             "taller": lambda *_: self._adjust_coverage(+COVERAGE_STEP),
             "shorter": lambda *_: self._adjust_coverage(-COVERAGE_STEP),
             "more-transparent": lambda *_: self._adjust_transparency(+TRANSPARENCY_STEP),
@@ -201,6 +203,7 @@ class TopTermWindow(Adw.ApplicationWindow):
             (shortcuts.close_tab, "win.close-tab"),
             (shortcuts.rename_tab, "win.rename-tab"),
             (shortcuts.find, "win.find"),
+            (shortcuts.paste, "win.paste"),
             *ADJUST_BINDINGS,
             *TAB_SELECT_BINDINGS,
         )
@@ -250,13 +253,22 @@ class TopTermWindow(Adw.ApplicationWindow):
         if page is not None:
             self.tab_view.close_page(page)
 
-    def _start_search_in_current_tab(self) -> None:
+    def _current_tab(self) -> TerminalTab | None:
         page = self.tab_view.get_selected_page()
         if page is None:
-            return
+            return None
         tab = page.get_child()
-        if isinstance(tab, TerminalTab):
+        return tab if isinstance(tab, TerminalTab) else None
+
+    def _start_search_in_current_tab(self) -> None:
+        tab = self._current_tab()
+        if tab is not None:
             tab.start_search()
+
+    def _paste_in_current_tab(self) -> None:
+        tab = self._current_tab()
+        if tab is not None:
+            tab.paste()
 
     def _select_tab(self, idx: int) -> None:
         if 0 <= idx < self.tab_view.get_n_pages():

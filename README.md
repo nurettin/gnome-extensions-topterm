@@ -33,6 +33,8 @@ Ctrl+Shift+Up/Down   taller / shorter (5%)
 Ctrl+Shift+T / O     more transparent / more opaque (5%)
 Ctrl++ / Ctrl+-      zoom in / out  (also Ctrl+Scroll)
 Middle-click         paste primary selection
+Ctrl+Shift+V         paste (images shown as blocks)
+Ctrl+Click           open URL under pointer
 ```
 
 ## Install
@@ -70,6 +72,7 @@ new_tab = <Primary>t
 close_tab = <Primary>w
 rename_tab = F2
 find = <Primary>f
+paste = <Primary><Shift>v
 ```
 
 The F1 toggle accel is a GNOME Shell extension setting (not in `config.ini`):

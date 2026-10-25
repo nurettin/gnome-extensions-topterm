@@ -24,7 +24,7 @@ If that is a problem for you, fork it.
 ## Shortcuts
 
 ```
-F1                   toggle dropdown (rebindable: gsettings set org.gnome.shell.extensions.topterm toggle "['F1']")
+F1                   toggle dropdown (rebindable, see Configure)
 Ctrl+T / Ctrl+W      new / close tab
 F2                   rename current tab
 Ctrl+F               find in scrollback (Esc to close)
@@ -78,7 +78,7 @@ paste = <Primary><Shift>v
 The F1 toggle accel is a GNOME Shell extension setting (not in `config.ini`):
 
 ```bash
-gsettings set org.gnome.shell.extensions.topterm toggle "['<Super>grave']"
+gsettings --schemadir ~/.local/share/gnome-shell/extensions/topterm@nurett.in/schemas set org.gnome.shell.extensions.topterm toggle "['<Super>grave']"
 ```
 
 ## Requirements

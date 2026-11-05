@@ -85,7 +85,7 @@ gsettings --schemadir ~/.local/share/gnome-shell/extensions/topterm@nurett.in/sc
 
 ## Requirements
 
-- GNOME Shell 50 (Wayland)
+- GNOME Shell 50 or 51 (Wayland)
 - Python 3.11+
 - PyGObject (`python3-gobject` / `python3-gi`)
 - GTK4 + libadwaita

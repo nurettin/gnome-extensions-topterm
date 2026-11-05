@@ -17,7 +17,7 @@ from gi.repository import GLib
 from topterm.config import Sound, Sounds
 
 # Streaming output prints many lines a second; closer together than this the chirps become a drone.
-MIN_GAP_US = {Sound.SHOW: 0, Sound.HIDE: 0, Sound.LINE: 150_000}
+MIN_GAP_US = {Sound.SHOW: 0, Sound.HIDE: 0, Sound.TAB: 0, Sound.ENTER: 0, Sound.LINE: 150_000}
 
 
 class Speaker:

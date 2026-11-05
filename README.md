@@ -21,7 +21,7 @@ If that is a problem for you, fork it.
 - F1 toggle keybinding registered through a tiny GNOME Shell extension that talks to the app over D-Bus
 - All UI/keybinding state persisted in a plain `~/.config/topterm/config.ini`
 - Tabs survive restarts and reboots: each tab's title, directory and foreground command are saved to `~/.local/state/topterm/tabs.json` every 5 seconds. On the next launch a tab that was running Claude Code resumes its session (`claude <flags> --resume <id>`); any other command is typed back at the prompt without running.
-- Optional sounds for dropping down, putting away and new output lines, and an optional `style.css` for a theme's own look (a frame, say). Both are off until configured.
+- Optional sounds for dropping down, putting away, switching tabs, pressing Enter and new output lines, and an optional `style.css` for a theme's own look (a frame, say). Both are off until configured.
 
 ## Shortcuts
 
@@ -82,6 +82,8 @@ help = <Primary><Shift>F1
 volume = 100           # 0..100; 0 = silent
 show =                 # each a sound file, or a glob with one match picked at random each time; empty = silent
 hide =
+tab =                  # another tab comes on screen
+enter =                # the Enter key in a tab
 line =                 # a new line in the tab on screen, at most ~7 a second
 ```
 

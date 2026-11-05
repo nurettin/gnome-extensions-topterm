@@ -78,6 +78,7 @@ class TopTermWindow(Adw.ApplicationWindow):
         self.tab_view = Adw.TabView()
         self.tab_view.connect("close-page", self._on_close_page)
         self.tab_view.connect("page-detached", self._on_page_detached)
+        self.tab_view.connect("notify::selected-page", self._on_selected_page_changed)
 
         tab_bar = Adw.TabBar(view=self.tab_view, autohide=False, expand_tabs=False)
 
@@ -334,6 +335,11 @@ class TopTermWindow(Adw.ApplicationWindow):
     def put_away(self) -> None:
         self.app.speaker.play(Sound.HIDE)
         self.set_visible(False)
+
+    def _on_selected_page_changed(self, *_: object) -> None:
+        # Restoring tabs at startup selects each one while the dropdown is still hidden.
+        if self.get_visible():
+            self.app.speaker.play(Sound.TAB)
 
     def _on_close_page(self, view: Adw.TabView, page: Adw.TabPage) -> bool:
         view.close_page_finish(page, True)

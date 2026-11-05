@@ -100,6 +100,12 @@ class TerminalTab(Gtk.Box):
         self.terminal.connect("child-exited", lambda *_: self.on_exit(self))
         self.terminal.connect("contents-changed", self._on_contents_changed)
 
+        # CAPTURE so the key is seen before VTE takes it; the handler always lets it through.
+        keys = Gtk.EventControllerKey()
+        keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        keys.connect("key-pressed", self._on_key_pressed)
+        self.terminal.add_controller(keys)
+
         self.terminal.spawn_async(
             Vte.PtyFlags.DEFAULT,
             cwd,
@@ -131,6 +137,13 @@ class TerminalTab(Gtk.Box):
             terminal.feed_child(typed.encode("utf-8"))
 
         handler = self.terminal.connect("contents-changed", on_contents_changed)
+
+    def _on_key_pressed(
+        self, _controller: Gtk.EventControllerKey, keyval: int, _keycode: int, _state: Gdk.ModifierType
+    ) -> bool:
+        if keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+            self.speaker.play(Sound.ENTER)
+        return False
 
     def _on_contents_changed(self, terminal: Vte.Terminal) -> None:
         # The cursor row counts from the top of the scrollback, so it only grows when a line is

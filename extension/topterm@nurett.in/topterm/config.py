@@ -27,6 +27,8 @@ class Sound(StrEnum):
 
     SHOW = "show"  # the dropdown comes down
     HIDE = "hide"  # the dropdown goes away
+    TAB = "tab"  # another tab comes on screen
+    ENTER = "enter"  # the Enter key is pressed in a tab
     LINE = "line"  # a new line appears in the tab on screen
 
 

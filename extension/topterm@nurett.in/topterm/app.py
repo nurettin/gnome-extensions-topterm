@@ -12,6 +12,7 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 from topterm import config, ptyxis, session
 from topterm.config import Config
 from topterm.ptyxis import PtyxisColors, PtyxisTheme
+from topterm.sound import Speaker
 from topterm.window import TopTermWindow
 
 APP_ID = "in.nurett.topterm"
@@ -42,6 +43,8 @@ class TopTermApp(Adw.Application):
         cfg_path = config.default_path()
         self.cfg: Config = config.load(cfg_path)
         self.tabs_path = session.default_path()
+        self.style_path = cfg_path.parent / "style.css"
+        self.speaker = Speaker(self.cfg.sounds)
         self.shell = os.environ.get("SHELL") or "/bin/bash"
         self.css_provider: Gtk.CssProvider | None = None
         self.window: TopTermWindow | None = None
@@ -55,6 +58,13 @@ class TopTermApp(Adw.Application):
         toggle.connect("activate", self._on_toggle)
         self.add_action(toggle)
         self._reload_css()
+        # A theme's own look for topterm (a frame, say), drawn over topterm's CSS. Read once at startup.
+        if self.style_path.exists():
+            style = Gtk.CssProvider()
+            style.load_from_path(str(self.style_path))
+            Gtk.StyleContext.add_provider_for_display(
+                Gdk.Display.get_default(), style, Gtk.STYLE_PROVIDER_PRIORITY_USER
+            )
 
     def do_activate(self) -> None:
         if self.window is None:
@@ -69,7 +79,7 @@ class TopTermApp(Adw.Application):
             if show_banner:
                 self.cfg.banner_shown = True
                 self.save_config()
-        self.window.present()
+        self.window.drop_down()
 
     def bg_rgba(self) -> Gdk.RGBA:
         if self.cfg.follow_theme:
@@ -167,9 +177,9 @@ class TopTermApp(Adw.Application):
             self.activate()
             return
         if self.window.get_visible():
-            self.window.set_visible(False)
+            self.window.put_away()
         else:
-            self.window.present()
+            self.window.drop_down()
 
 
 def _is_dark_color(spec: str) -> bool:

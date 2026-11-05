@@ -7,7 +7,9 @@ gi.require_version("Vte", "3.91")
 
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango, Vte
 
+from topterm.config import Sound
 from topterm.image import render_texture
+from topterm.sound import Speaker
 
 ZOOM_STEP = 1.1
 ZOOM_MIN = 0.5
@@ -37,13 +39,16 @@ class TerminalTab(Gtk.Box):
         zoom: float,
         on_zoom_change: Callable[[float], None],
         on_exit: Callable[["TerminalTab"], None],
+        speaker: Speaker,
         typed: str | None,
         banner: str | None = None,
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.on_zoom_change = on_zoom_change
         self.on_exit = on_exit
+        self.speaker = speaker
         self.shell_pid: int | None = None
+        self.cursor_row = 0
         self.terminal = Vte.Terminal()
         self.terminal.set_hexpand(True)
         self.terminal.set_vexpand(True)
@@ -93,6 +98,7 @@ class TerminalTab(Gtk.Box):
         self.terminal.add_controller(link_click)
 
         self.terminal.connect("child-exited", lambda *_: self.on_exit(self))
+        self.terminal.connect("contents-changed", self._on_contents_changed)
 
         self.terminal.spawn_async(
             Vte.PtyFlags.DEFAULT,
@@ -125,6 +131,15 @@ class TerminalTab(Gtk.Box):
             terminal.feed_child(typed.encode("utf-8"))
 
         handler = self.terminal.connect("contents-changed", on_contents_changed)
+
+    def _on_contents_changed(self, terminal: Vte.Terminal) -> None:
+        # The cursor row counts from the top of the scrollback, so it only grows when a line is
+        # added; in-place redraws such as a spinner leave it where it was. Only the tab on screen
+        # makes a sound: it is mapped while selected and the dropdown is down.
+        _column, row = terminal.get_cursor_position()
+        if row > self.cursor_row and terminal.get_mapped():
+            self.speaker.play(Sound.LINE)
+        self.cursor_row = row
 
     def set_appearance(
         self,

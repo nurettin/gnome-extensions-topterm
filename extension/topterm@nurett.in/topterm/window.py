@@ -8,7 +8,7 @@ gi.require_version("Gdk", "4.0")
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from topterm import session
-from topterm.config import Shortcuts
+from topterm.config import Shortcuts, Sound
 from topterm.session import TabState
 from topterm.tab import TerminalTab, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP
 
@@ -52,7 +52,7 @@ HELP_TEXT = (
     "  Ctrl+Shift+V         paste (images shown as blocks)\n"
     "  Ctrl+Click           open URL under pointer\n"
     "\n"
-    "Config: ~/.config/topterm/config.ini"
+    "Config: ~/.config/topterm/config.ini, style.css"
 )
 
 WELCOME_BANNER = "".join(
@@ -136,6 +136,7 @@ class TopTermWindow(Adw.ApplicationWindow):
             zoom=self.app.cfg.zoom,
             on_zoom_change=self._on_zoom_change,
             on_exit=self._on_tab_exit,
+            speaker=self.app.speaker,
             typed=typed,
             banner=banner,
         )
@@ -326,6 +327,14 @@ class TopTermWindow(Adw.ApplicationWindow):
 
     # ---- window lifecycle -------------------------------------------------
 
+    def drop_down(self) -> None:
+        self.app.speaker.play(Sound.SHOW)
+        self.present()
+
+    def put_away(self) -> None:
+        self.app.speaker.play(Sound.HIDE)
+        self.set_visible(False)
+
     def _on_close_page(self, view: Adw.TabView, page: Adw.TabPage) -> bool:
         view.close_page_finish(page, True)
         return True
@@ -336,9 +345,9 @@ class TopTermWindow(Adw.ApplicationWindow):
             self.get_application().quit()
 
     def _on_close_request(self, *_: object) -> bool:
-        self.set_visible(False)
+        self.put_away()
         return True
 
     def _on_active_changed(self, *_: object) -> None:
         if self.get_visible() and not self.is_active():
-            self.set_visible(False)
+            self.put_away()

@@ -1,5 +1,6 @@
 import configparser
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 import gi
@@ -21,6 +22,20 @@ class Shortcuts:
     help: str
 
 
+class Sound(StrEnum):
+    """Terminal events that can make a sound; each names a key in the [sounds] section."""
+
+    SHOW = "show"  # the dropdown comes down
+    HIDE = "hide"  # the dropdown goes away
+    LINE = "line"  # a new line appears in the tab on screen
+
+
+@dataclass
+class Sounds:
+    volume: int  # 0..100; 0 = silent
+    files: dict[Sound, str]  # per event, a glob of sound files, one picked at random each time; "" = silent
+
+
 @dataclass
 class Config:
     path: Path
@@ -32,6 +47,7 @@ class Config:
     zoom: float  # vte font scale (0.5..4.0); 1.0 = no zoom
     banner_shown: bool  # welcome banner shown once
     shortcuts: Shortcuts
+    sounds: Sounds
 
 
 _DEFAULTS_UI = {
@@ -51,6 +67,7 @@ _DEFAULTS_SHORTCUTS = {
     "paste": "<Primary><Shift>v",
     "help": "<Primary><Shift>F1",
 }
+_DEFAULTS_SOUNDS = {"volume": "100", **dict.fromkeys(Sound, "")}
 
 
 def default_path() -> Path:
@@ -64,6 +81,7 @@ def load(path: Path) -> Config:
 
     ui = parser["ui"] if parser.has_section("ui") else {}
     sc = parser["shortcuts"] if parser.has_section("shortcuts") else {}
+    sn = parser["sounds"] if parser.has_section("sounds") else {}
 
     coverage = _parse_int_in_range(
         "coverage", ui.get("coverage", _DEFAULTS_UI["coverage"]), 1, 100
@@ -105,6 +123,12 @@ def load(path: Path) -> Config:
             "help", sc.get("help", _DEFAULTS_SHORTCUTS["help"])
         ),
     )
+    sounds = Sounds(
+        volume=_parse_int_in_range(
+            "volume", sn.get("volume", _DEFAULTS_SOUNDS["volume"]), 0, 100
+        ),
+        files={sound: sn.get(sound, _DEFAULTS_SOUNDS[sound]) for sound in Sound},
+    )
 
     cfg = Config(
         path=path,
@@ -116,6 +140,7 @@ def load(path: Path) -> Config:
         zoom=zoom,
         banner_shown=banner_shown,
         shortcuts=shortcuts,
+        sounds=sounds,
     )
 
     if not path.exists():
@@ -143,6 +168,7 @@ def save(cfg: Config) -> None:
         "paste": cfg.shortcuts.paste,
         "help": cfg.shortcuts.help,
     }
+    parser["sounds"] = {"volume": str(cfg.sounds.volume), **cfg.sounds.files}
     cfg.path.parent.mkdir(parents=True, exist_ok=True)
     with cfg.path.open("w") as f:
         parser.write(f)

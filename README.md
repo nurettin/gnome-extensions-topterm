@@ -21,6 +21,7 @@ If that is a problem for you, fork it.
 - F1 toggle keybinding registered through a tiny GNOME Shell extension that talks to the app over D-Bus
 - All UI/keybinding state persisted in a plain `~/.config/topterm/config.ini`
 - Tabs survive restarts and reboots: each tab's title, directory and foreground command are saved to `~/.local/state/topterm/tabs.json` every 5 seconds. On the next launch a tab that was running Claude Code resumes its session (`claude <flags> --resume <id>`); any other command is typed back at the prompt without running.
+- Optional sounds for dropping down, putting away and new output lines, and an optional `style.css` for a theme's own look (a frame, say). Both are off until configured.
 
 ## Shortcuts
 
@@ -76,6 +77,24 @@ rename_tab = F2
 find = <Primary>f
 paste = <Primary><Shift>v
 help = <Primary><Shift>F1
+
+[sounds]
+volume = 100           # 0..100; 0 = silent
+show =                 # each a sound file, or a glob with one match picked at random each time; empty = silent
+hide =
+line =                 # a new line in the tab on screen, at most ~7 a second
+```
+
+Sounds play only for the tab on screen, while the dropdown is down. They are uploaded to the sound server at startup, so restart topterm after changing them.
+
+A theme can restyle topterm with GTK CSS in `~/.config/topterm/style.css`, which is read at startup and drawn over topterm's own CSS. For example, a frame that leaves the top edge open against the top bar:
+
+```css
+window.background {
+  border: 8px solid #847e6c;
+  border-top-width: 0;
+  border-radius: 0 0 10px 10px;
+}
 ```
 
 The F1 toggle accel is a GNOME Shell extension setting (not in `config.ini`):
@@ -91,6 +110,7 @@ gsettings --schemadir ~/.local/share/gnome-shell/extensions/topterm@nurett.in/sc
 - PyGObject (`python3-gobject` / `python3-gi`)
 - GTK4 + libadwaita
 - VTE 3.91 GIR bindings — Fedora: `vte291-gtk4`, Debian/Ubuntu: `gir1.2-vte-3.91`
+- Only when sounds are configured: GSound — Fedora: `gsound`, Debian/Ubuntu: `gir1.2-gsound-1.0`
 
 On a vanilla GNOME 50 install the GTK4/libadwaita typelibs are typically already pulled in by the desktop itself; VTE 3.91 is the one to double-check.
 

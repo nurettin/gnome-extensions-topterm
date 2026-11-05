@@ -9,7 +9,7 @@ gi.require_version("Gdk", "4.0")
 
 from gi.repository import Adw, Gdk, Gio, Gtk
 
-from topterm import config, ptyxis
+from topterm import config, ptyxis, session
 from topterm.config import Config
 from topterm.ptyxis import PtyxisColors, PtyxisTheme
 from topterm.window import TopTermWindow
@@ -41,6 +41,7 @@ class TopTermApp(Adw.Application):
         )
         cfg_path = config.default_path()
         self.cfg: Config = config.load(cfg_path)
+        self.tabs_path = session.default_path()
         self.shell = os.environ.get("SHELL") or "/bin/bash"
         self.css_provider: Gtk.CssProvider | None = None
         self.window: TopTermWindow | None = None
@@ -62,6 +63,7 @@ class TopTermApp(Adw.Application):
                 app=self,
                 shell=self.shell,
                 cwd=str(Path.home()),
+                tabs=session.load(self.tabs_path),
                 first_run=show_banner,
             )
             if show_banner:

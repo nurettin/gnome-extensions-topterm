@@ -37,11 +37,13 @@ class TerminalTab(Gtk.Box):
         zoom: float,
         on_zoom_change: Callable[[float], None],
         on_exit: Callable[["TerminalTab"], None],
+        typed: str | None,
         banner: str | None = None,
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.on_zoom_change = on_zoom_change
         self.on_exit = on_exit
+        self.shell_pid: int | None = None
         self.terminal = Vte.Terminal()
         self.terminal.set_hexpand(True)
         self.terminal.set_vexpand(True)
@@ -102,12 +104,27 @@ class TerminalTab(Gtk.Box):
             None,
             -1,
             None,
-            None,
+            self._on_spawned,
             None,
         )
 
+        if typed is not None:
+            self._type_at_first_prompt(typed)
         if banner is not None:
             self.terminal.feed(banner.encode("utf-8"))
+
+    def _on_spawned(self, _terminal: Vte.Terminal, pid: int, error: GLib.Error | None, _data: object) -> None:
+        if error is not None:
+            raise error
+        self.shell_pid = pid
+
+    def _type_at_first_prompt(self, typed: str) -> None:
+        # Waiting for the prompt means readline already owns the tty, so the text is echoed once.
+        def on_contents_changed(terminal: Vte.Terminal) -> None:
+            terminal.disconnect(handler)
+            terminal.feed_child(typed.encode("utf-8"))
+
+        handler = self.terminal.connect("contents-changed", on_contents_changed)
 
     def set_appearance(
         self,

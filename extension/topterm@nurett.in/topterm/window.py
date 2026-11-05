@@ -7,9 +7,13 @@ gi.require_version("Gdk", "4.0")
 
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
+from topterm import session
 from topterm.config import Shortcuts
+from topterm.session import TabState
 from topterm.tab import TerminalTab, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP
 
+# How stale the remembered tabs may be when the session ends without warning (reboot, crash).
+SAVE_INTERVAL_S = 5
 COVERAGE_STEP = 5
 COVERAGE_MIN = 10
 COVERAGE_MAX = 100
@@ -63,7 +67,7 @@ WELCOME_BANNER = "".join(
 
 
 class TopTermWindow(Adw.ApplicationWindow):
-    def __init__(self, app, shell: str, cwd: str, first_run: bool) -> None:
+    def __init__(self, app, shell: str, cwd: str, tabs: list[TabState], first_run: bool) -> None:
         super().__init__(application=app)
         self.app = app
         self.shell = shell
@@ -86,14 +90,18 @@ class TopTermWindow(Adw.ApplicationWindow):
         self.shortcut_controller: Gtk.ShortcutController | None = None
         self.apply_shortcuts(self.app.cfg.shortcuts)
 
-        self.add_tab(banner=WELCOME_BANNER if first_run else None)
+        for tab in tabs:
+            self.add_tab(cwd=tab.cwd, title=tab.title, typed=tab.typed(), banner=None)
+        if not tabs:
+            self.add_tab(cwd=self.cwd, title=None, typed=None, banner=WELCOME_BANNER if first_run else None)
+        GLib.timeout_add_seconds(SAVE_INTERVAL_S, self._on_save_tick)
 
         self.connect("close-request", self._on_close_request)
         self.connect("notify::is-active", self._on_active_changed)
 
     def _install_actions(self) -> None:
         actions = {
-            "new-tab": lambda *_: self.add_tab(),
+            "new-tab": lambda *_: self.add_tab(cwd=self.cwd, title=None, typed=None, banner=None),
             "close-tab": lambda *_: self._close_current_tab(),
             "rename-tab": lambda *_: self.rename_current_tab(),
             "find": lambda *_: self._start_search_in_current_tab(),
@@ -117,10 +125,10 @@ class TopTermWindow(Adw.ApplicationWindow):
 
     # ---- tabs -------------------------------------------------------------
 
-    def add_tab(self, banner: str | None = None) -> Adw.TabPage:
+    def add_tab(self, cwd: str, title: str | None, typed: str | None, banner: str | None) -> Adw.TabPage:
         tab = TerminalTab(
             shell=self.shell,
-            cwd=self.cwd,
+            cwd=cwd,
             bg_rgba=self.app.bg_rgba(),
             fg_rgba=self.app.fg_rgba(),
             palette=self.app.palette_rgba(),
@@ -128,12 +136,26 @@ class TopTermWindow(Adw.ApplicationWindow):
             zoom=self.app.cfg.zoom,
             on_zoom_change=self._on_zoom_change,
             on_exit=self._on_tab_exit,
+            typed=typed,
             banner=banner,
         )
         page = self.tab_view.append(tab)
-        page.set_title(f"Terminal {self.tab_view.get_n_pages()}")
+        page.set_title(title or f"Terminal {self.tab_view.get_n_pages()}")
         self.tab_view.set_selected_page(page)
         return page
+
+    def save_tabs(self) -> None:
+        pages = (self.tab_view.get_nth_page(i) for i in range(self.tab_view.get_n_pages()))
+        states = (
+            session.snapshot(page.get_title(), page.get_child().shell_pid)
+            for page in pages
+            if page.get_child().shell_pid is not None
+        )
+        session.save(self.app.tabs_path, [state for state in states if state is not None])
+
+    def _on_save_tick(self) -> bool:
+        self.save_tabs()
+        return GLib.SOURCE_CONTINUE
 
     def _on_tab_exit(self, tab: TerminalTab) -> None:
         page = self.tab_view.get_page(tab)
@@ -309,6 +331,7 @@ class TopTermWindow(Adw.ApplicationWindow):
         return True
 
     def _on_page_detached(self, view: Adw.TabView, page: Adw.TabPage, pos: int) -> None:
+        self.save_tabs()
         if view.get_n_pages() == 0:
             self.get_application().quit()
 

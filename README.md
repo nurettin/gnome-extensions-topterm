@@ -20,6 +20,7 @@ If that is a problem for you, fork it.
 - Tabs (Adw.TabView), per-launch font zoom, transparency, custom background
 - F1 toggle keybinding registered through a tiny GNOME Shell extension that talks to the app over D-Bus
 - All UI/keybinding state persisted in a plain `~/.config/topterm/config.ini`
+- Tabs survive restarts and reboots: each tab's title, directory and foreground command are saved to `~/.local/state/topterm/tabs.json` every 5 seconds. On the next launch a tab that was running Claude Code resumes its session (`claude <flags> --resume <id>`); any other command is typed back at the prompt without running.
 
 ## Shortcuts
 

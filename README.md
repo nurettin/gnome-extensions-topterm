@@ -25,11 +25,12 @@ If that is a problem for you, fork it.
 
 ```
 F1                   toggle dropdown (rebindable, see Configure)
+Ctrl+Shift+F1        show this help
 Ctrl+T / Ctrl+W      new / close tab
 F2                   rename current tab
 Ctrl+F               find in scrollback (Esc to close)
 Alt+1..9, Alt+0      jump to tab 1..9, 10
-Ctrl+Shift+Up/Down   taller / shorter (5%)
+Ctrl+Shift+Up/Down   shorter / taller (5%)
 Ctrl+Shift+T / O     more transparent / more opaque (5%)
 Ctrl++ / Ctrl+-      zoom in / out  (also Ctrl+Scroll)
 Middle-click         paste primary selection
@@ -73,6 +74,7 @@ close_tab = <Primary>w
 rename_tab = F2
 find = <Primary>f
 paste = <Primary><Shift>v
+help = <Primary><Shift>F1
 ```
 
 The F1 toggle accel is a GNOME Shell extension setting (not in `config.ini`):

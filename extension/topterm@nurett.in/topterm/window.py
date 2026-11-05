@@ -33,24 +33,32 @@ TAB_SELECT_BINDINGS: tuple[tuple[str, str], ...] = tuple(
     (f"<Alt>{i % 10}", f"win.select-tab-{i}") for i in range(1, 11)
 )
 
-WELCOME_BANNER = (
-    "# Welcome to topterm — opinionated dropdown terminal for GNOME Wayland\r\n"
-    "#\r\n"
-    "# Shortcuts:\r\n"
-    "#   F1                   toggle (gsettings org.gnome.shell.extensions.topterm toggle)\r\n"
-    "#   Ctrl+T / Ctrl+W      new / close tab\r\n"
-    "#   F2                   rename current tab\r\n"
-    "#   Ctrl+F               find in scrollback (Esc to close)\r\n"
-    "#   Alt+1..9, Alt+0      jump to tab 1..9, 10\r\n"
-    "#   Ctrl+Shift+Up/Down   shorter / taller (5%)\r\n"
-    "#   Ctrl+Shift+T / O     more transparent / more opaque (5%)\r\n"
-    "#   Ctrl++ / Ctrl+-      zoom in / out  (also Ctrl+Scroll)\r\n"
-    "#   Middle-click         paste primary selection\r\n"
-    "#   Ctrl+Shift+V         paste (images shown as blocks)\r\n"
-    "#   Ctrl+Click           open URL under pointer\r\n"
-    "#\r\n"
-    "# Config: ~/.config/topterm/config.ini\r\n"
-    "#\r\n"
+HELP_TEXT = (
+    "Shortcuts:\n"
+    "  F1                   toggle (gsettings org.gnome.shell.extensions.topterm toggle)\n"
+    "  Ctrl+Shift+F1        show this help\n"
+    "  Ctrl+T / Ctrl+W      new / close tab\n"
+    "  F2                   rename current tab\n"
+    "  Ctrl+F               find in scrollback (Esc to close)\n"
+    "  Alt+1..9, Alt+0      jump to tab 1..9, 10\n"
+    "  Ctrl+Shift+Up/Down   shorter / taller (5%)\n"
+    "  Ctrl+Shift+T / O     more transparent / more opaque (5%)\n"
+    "  Ctrl++ / Ctrl+-      zoom in / out  (also Ctrl+Scroll)\n"
+    "  Middle-click         paste primary selection\n"
+    "  Ctrl+Shift+V         paste (images shown as blocks)\n"
+    "  Ctrl+Click           open URL under pointer\n"
+    "\n"
+    "Config: ~/.config/topterm/config.ini"
+)
+
+WELCOME_BANNER = "".join(
+    f"# {line}".rstrip() + "\r\n"
+    for line in (
+        "Welcome to topterm — opinionated dropdown terminal for GNOME Wayland",
+        "",
+        *HELP_TEXT.splitlines(),
+        "",
+    )
 )
 
 
@@ -90,6 +98,7 @@ class TopTermWindow(Adw.ApplicationWindow):
             "rename-tab": lambda *_: self.rename_current_tab(),
             "find": lambda *_: self._start_search_in_current_tab(),
             "paste": lambda *_: self._paste_in_current_tab(),
+            "help": lambda *_: self._show_help(),
             "taller": lambda *_: self._adjust_coverage(+COVERAGE_STEP),
             "shorter": lambda *_: self._adjust_coverage(-COVERAGE_STEP),
             "more-transparent": lambda *_: self._adjust_transparency(+TRANSPARENCY_STEP),
@@ -204,6 +213,7 @@ class TopTermWindow(Adw.ApplicationWindow):
             (shortcuts.rename_tab, "win.rename-tab"),
             (shortcuts.find, "win.find"),
             (shortcuts.paste, "win.paste"),
+            (shortcuts.help, "win.help"),
             *ADJUST_BINDINGS,
             *TAB_SELECT_BINDINGS,
         )
@@ -269,6 +279,24 @@ class TopTermWindow(Adw.ApplicationWindow):
         tab = self._current_tab()
         if tab is not None:
             tab.paste()
+
+    def _show_help(self) -> None:
+        label = Gtk.Label(
+            label=HELP_TEXT,
+            xalign=0,
+            css_classes=["monospace"],
+            margin_top=12,
+            margin_bottom=12,
+            margin_start=12,
+            margin_end=12,
+        )
+        # Scrolls only when the dropdown is shorter than the help text.
+        scroller = Gtk.ScrolledWindow(
+            child=label, propagate_natural_width=True, propagate_natural_height=True
+        )
+        toolbar = Adw.ToolbarView(content=scroller)
+        toolbar.add_top_bar(Adw.HeaderBar())
+        Adw.Dialog(title="topterm help", child=toolbar).present(self)
 
     def _select_tab(self, idx: int) -> None:
         if 0 <= idx < self.tab_view.get_n_pages():

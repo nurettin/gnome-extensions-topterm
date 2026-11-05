@@ -18,6 +18,7 @@ class Shortcuts:
     rename_tab: str
     find: str
     paste: str
+    help: str
 
 
 @dataclass
@@ -48,6 +49,7 @@ _DEFAULTS_SHORTCUTS = {
     "rename_tab": "F2",
     "find": "<Primary>f",
     "paste": "<Primary><Shift>v",
+    "help": "<Primary><Shift>F1",
 }
 
 
@@ -99,6 +101,9 @@ def load(path: Path) -> Config:
         paste=_validate_accel(
             "paste", sc.get("paste", _DEFAULTS_SHORTCUTS["paste"])
         ),
+        help=_validate_accel(
+            "help", sc.get("help", _DEFAULTS_SHORTCUTS["help"])
+        ),
     )
 
     cfg = Config(
@@ -136,6 +141,7 @@ def save(cfg: Config) -> None:
         "rename_tab": cfg.shortcuts.rename_tab,
         "find": cfg.shortcuts.find,
         "paste": cfg.shortcuts.paste,
+        "help": cfg.shortcuts.help,
     }
     cfg.path.parent.mkdir(parents=True, exist_ok=True)
     with cfg.path.open("w") as f:
